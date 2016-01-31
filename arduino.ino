@@ -44,7 +44,64 @@ static int channel = 0;
 static int midi_message [16];
 static int midi_counter = 0;
 
+static int manufacturers_id []= {-1, 0, 0};
+static int product_id [] = {-1, 0};
+static int product_model [] = {0, 0};
+static int product_version [] = {0, 0, 0, 0};
+static int device_id = 0x7f;
+
+int check_manufacturers_id () {
+  if (midi_counter < 1) return 0;
+  if (manufacturers_id [0] != 0 && manufacturers_id [0] == midi_message [0]) return 1;
+  for (int ind = 0; ind < 3; ind++) {if (manufacturers_id [ind] != midi_message [ind]) return 0;}
+  if (midi_counter < 3) return 0;
+  return 3;
+}
+
 void process_system_exclusive () {
+  if (midi_message [0] == 0x7e) {
+    if (manufacturers_id [0] < 0 || product_id [0] < 0) {Serial . write (0xf0); Serial . write (0x7e); Serial . write (0x7f); Serial . write (0xf7); return;}
+    if (midi_message [1] == 0x7f || midi_message [1] == device_id) {
+      if (midi_message [2] != 6 || midi_message [3] != 1) return;
+      Serial . write (0xf0); Serial . write (0x7e); Serial . write (device_id); Serial . write (6); Serial . write (2);
+      if (manufacturers_id [0] < 1) {Serial . write (0); Serial . write (manufacturers_id [1]); Serial . write (manufacturers_id [2]);}
+      else Serial . write (manufacturers_id [0]);
+      Serial . write (product_id [0]); Serial . write (product_id [1]);
+      Serial . write (product_model [0]); Serial . write (product_model [1]);
+      for (int ind = 0; ind < 4; ind++) Serial . write (product_version [ind]);
+      Serial . write (0xf7);
+    }
+    return;
+  }
+  if (midi_message [0] == 0x7d) {
+    int mp = 1;
+    if (midi_message [mp] == 0) {for (int ind = 0; ind < 3; ind++) {if (mp >= midi_counter) return; manufacturers_id [ind] = midi_message [mp++];}}
+    else {if (mp >= midi_counter) return; manufacturers_id [0] = midi_message [mp++];}
+    if (mp >= midi_counter) return; product_id [0] = midi_message [mp++];
+    if (mp >= midi_counter) return; product_id [1] = midi_message [mp++];
+    if (mp >= midi_counter) return; product_model [0] = midi_message [mp++];
+    if (mp >= midi_counter) return; product_model [1] = midi_message [mp++];
+    for (int ind = 0; ind < 4; ind++) {if (mp >= midi_counter) return; product_version [ind] = midi_message [mp++];}
+  }
+  int mp = check_manufacturers_id ();
+  if (mp < 1) return;
+  int dv = midi_message [mp++];
+  if (dv != 0x7f && dv != device_id && device_id != 0x7f) return; if (mp >= midi_counter) return;
+  if (midi_message [mp++] != product_id [0]) return; if (mp >= midi_counter) return;
+  int m_command, m_channel, index;
+  switch (midi_message [mp++]) {
+    case 0: if (mp >= midi_counter) return; device_id = midi_message [mp]; return;
+    case 1: if (mp >= midi_counter) return;
+      m_command = midi_message [mp++]; if (mp >= midi_counter) return;
+      m_channel = midi_message [mp++];
+      if (mp >= midi_counter) {m_command = (m_command << 4) + m_channel; for (int ind = 0; ind < 16; ind++) knob_commands [ind] . command = m_command; return;}
+      index = midi_message [mp++]; if (mp >= midi_counter) return;
+      knob_commands [index] . set (m_command, m_channel, midi_message [mp]);
+      return;
+  }
+  Serial . write (0xf0);
+  while (mp < midi_counter) Serial . write (midi_message [mp++]);
+  Serial . write (0xf7);
 }
 
 void process_midi_command () {
@@ -70,7 +127,7 @@ void setup () {
   for (int ind = 0; ind < 6; ind++) {button_commands [ind] . set (0xc, 0, ind, 100, 0); led_commands [ind] . set (0xb, 0, ind);}
   for (int ind = 6; ind < 12; ind++) {button_commands [ind] . set (0x9, 0, 54 + ind, 100, 0); led_commands [ind] . set (0x9, 0, 54 + ind);}
   for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
-  for (int ind = 0; ind < 16; ind++) {a [ind] = analogs [ind] = 0; knob_commands [ind] . set (0xb, 0, ind);}
+  for (int ind = 0; ind < 16; ind++) {analogs [ind] = (a [ind] = analogRead (A0 + ind)) >> 3; knob_commands [ind] . set (0xb, 0, ind);}
   for (int ind = 22; ind < 54; ind++) {pinMode (ind, INPUT); programs [ind] = 0;}
   Serial . begin (9600);
 }
