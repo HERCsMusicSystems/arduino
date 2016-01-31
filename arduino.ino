@@ -12,7 +12,7 @@ struct button_command {
   int lsb;
   int off;
   void set (int command, int channel, int msb, int lsb, int off) {
-    this -> command = (command << 4) + channel;
+    this -> command = ((command << 4) + channel) & 0x7f;
     this -> msb = msb;
     this -> lsb = lsb;
     this -> off = off;
@@ -25,7 +25,7 @@ struct led_command {
   int command;
   int msb;
   void set (int command, int channel, int msb) {
-    this -> command = (command << 4) + channel;
+    this -> command = ((command << 4) + channel) & 0x7f;
     this -> msb = msb;
   }
 };
@@ -88,16 +88,33 @@ void process_system_exclusive () {
   int dv = midi_message [mp++];
   if (dv != 0x7f && dv != device_id && device_id != 0x7f) return; if (mp >= midi_counter) return;
   if (midi_message [mp++] != product_id [0]) return; if (mp >= midi_counter) return;
-  int m_command, m_channel, index;
+  int m_command, m_channel, index, msb, lsb;
   switch (midi_message [mp++]) {
     case 0: if (mp >= midi_counter) return; device_id = midi_message [mp]; return;
     case 1: if (mp >= midi_counter) return;
       m_command = midi_message [mp++]; if (mp >= midi_counter) return;
       m_channel = midi_message [mp++];
-      if (mp >= midi_counter) {m_command = (m_command << 4) + m_channel; for (int ind = 0; ind < 16; ind++) knob_commands [ind] . command = m_command; return;}
+      if (mp >= midi_counter) {m_command = ((m_command << 4) + m_channel) & 0x7f; for (int ind = 0; ind < 16; ind++) knob_commands [ind] . command = m_command; return;}
       index = midi_message [mp++]; if (mp >= midi_counter) return;
       knob_commands [index] . set (m_command, m_channel, midi_message [mp]);
       return;
+	case 2: if (mp >= midi_counter) return;
+	  m_command = midi_message [mp++]; if (mp >= midi_counter) return;
+	  m_channel = midi_message [mp++];
+	  if (mp >= midi_counter) {m_command = ((m_command << 4) + m_channel) & 0x7f; for (int ind = 0; ind < 12; ind++) button_commands [ind] . command = m_command; return;}
+	  index = midi_message [mp++]; if (mp >= midi_counter) return;
+	  msb = midi_message [mp++]; if (mp >= midi_counter) {button_commands [index] . set (m_command, m_channel, msb, 100, 0); return;}
+	  lsb = midi_message [mp++]; if (mp >= midi_counter) {button_commands [index] . set (m_command, m_channel, msb, lsb, 0); return;}
+	  button_commands [index] . set (m_command, m_channel, msb, lsb, midi_message [mp]);
+	  return;
+	case 3: if (mp >= midi_counter) return;
+	  m_command = midi_message [mp++]; if (mp >= midi_counter) return;
+	  m_channel = midi_message [mp++];
+	  if (mp >= midi_counter) {m_command = ((m_command << 4) + m_channel) & 0x7f; for (int ind = 0; ind < 12; ind++) led_commands [ind] . command = m_command; return;}
+	  index = midi_message [mp++]; if (mp >= midi_counter) return;
+	  led_commands [index] . set (m_command, m_channel, midi_message [mp]);
+	  return;
+	default: break;
   }
   Serial . write (0xf0);
   while (mp < midi_counter) Serial . write (midi_message [mp++]);
@@ -123,11 +140,16 @@ void process_midi (int v) {
   }
 }
 
-void setup () {
+void factory_reset () {
   for (int ind = 0; ind < 6; ind++) {button_commands [ind] . set (0xc, 0, ind, 100, 0); led_commands [ind] . set (0xb, 0, ind);}
   for (int ind = 6; ind < 12; ind++) {button_commands [ind] . set (0x9, 0, 54 + ind, 100, 0); led_commands [ind] . set (0x9, 0, 54 + ind);}
+  for (int ind = 0; ind < 16; ind++) {knob_commands [ind] . set (0xb, 0, ind);}
+}
+
+void setup () {
+  factory_reset ();
   for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
-  for (int ind = 0; ind < 16; ind++) {analogs [ind] = (a [ind] = analogRead (A0 + ind)) >> 3; knob_commands [ind] . set (0xb, 0, ind);}
+  for (int ind = 0; ind < 16; ind++) {analogs [ind] = (a [ind] = analogRead (A0 + ind)) >> 3;}
   for (int ind = 22; ind < 54; ind++) {pinMode (ind, INPUT); programs [ind] = 0;}
   Serial . begin (9600);
 }
