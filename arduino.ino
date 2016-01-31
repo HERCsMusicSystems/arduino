@@ -1,29 +1,78 @@
 
-//#define DEBUG
+void set_led (int led, int intensity) {
+  if (led < 0) return;
+  if (led < 6) {analogWrite (7 - led, intensity); return;}
+  if (led < 12) analogWrite (19 - led, intensity);
+}
+
+struct button_command {
+  boolean short_message;
+  int command;
+  int msb;
+  int lsb;
+  int off;
+  void set (int command, int channel, int msb, int lsb, int off) {
+    this -> command = (command << 4) + channel;
+    this -> msb = msb;
+    this -> lsb = lsb;
+    this -> off = off;
+    if (command == 0xc || command == 0xd) short_message = true;
+    else short_message = false;
+  }
+};
+
+struct led_command {
+  int command;
+  int msb;
+  void set (int command, int channel, int msb) {
+    this -> command = (command << 4) + channel;
+    this -> msb = msb;
+  }
+};
+
+static button_command button_commands [12];
+static led_command led_commands [12];
+static led_command knob_commands [16];
 
 static int a [16];
 static int analogs [16];
 static int programs [54];
-static int brightness = 0;
-static int current_led = -1;
-static int cycles = -1;
-static int msb = 0;
-static int lsb = 0;
-static boolean active_control_read = false;
-static boolean msb_read = true;
 
-void setup () {
-  for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
-  for (int ind = 0; ind < 16; ind++) {a [ind] = analogs [ind] = 0;}
-  for (int ind = 22; ind < 54; ind++) {pinMode (ind, INPUT); programs [ind] = 0;}
-  Serial . begin (9600);
+static int command = -1;
+static int cmd = -1;
+static int channel = 0;
+static int midi_message [16];
+static int midi_counter = 0;
+
+void process_system_exclusive () {
 }
 
-void set_led (int led) {
-  for (int ind = 0; ind < 14; ind++) {
-    if (ind == led) analogWrite (ind, 100);
-    else analogWrite (ind, 0);
+void process_midi_command () {
+  for (int ind = 0; ind < 12; ind++) {
+    led_command * lc = led_commands + ind;
+    if (lc -> command == command && lc -> msb == midi_message [0]) set_led (ind, midi_message [1]);
   }
+}
+
+void process_midi (int v) {
+  if (v == 0xf7) {process_system_exclusive (); return;}
+  if (v == 0xf0) {command = 0xf0; cmd = 0xf0; channel = 0; midi_counter = 0; return;}
+  if (v > 0xf0) return;
+  if (v >= 128) {command = v; cmd = v >> 4; channel = v & 0xf; midi_counter = 0; return;}
+  switch (cmd) {
+    case 0xf0: if (midi_counter < 16) midi_message [midi_counter++] = v; return;
+    case 0x8: case 0x9: case 0xb: midi_message [midi_counter++] = v; if (midi_counter >= 2) {process_midi_command (); midi_counter = 0;} return;
+    default: return;
+  }
+}
+
+void setup () {
+  for (int ind = 0; ind < 6; ind++) {button_commands [ind] . set (0xc, 0, ind, 100, 0); led_commands [ind] . set (0xb, 0, ind);}
+  for (int ind = 6; ind < 12; ind++) {button_commands [ind] . set (0x9, 0, 54 + ind, 100, 0); led_commands [ind] . set (0x9, 0, 54 + ind);}
+  for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
+  for (int ind = 0; ind < 16; ind++) {a [ind] = analogs [ind] = 0; knob_commands [ind] . set (0xb, 0, ind);}
+  for (int ind = 22; ind < 54; ind++) {pinMode (ind, INPUT); programs [ind] = 0;}
+  Serial . begin (9600);
 }
 
 int to_program (int from) {
@@ -45,110 +94,40 @@ int to_program (int from) {
   return from;
 }
 
-void control_processing () {
-  if (0 <= msb && msb < 12) analogWrite (msb + 2, lsb);
+void button_processing (int button, int value) {
+  if (button < 0 || button >= 12) return;
+  button_command * bc = button_commands + button;
+  if (bc -> short_message) {
+    if (value == 0) return;
+    Serial . write (bc -> command); Serial . write (bc -> msb);
+  } else {
+    Serial . write (bc -> command); Serial . write (bc -> msb);
+    Serial . write (value == 0 ? bc -> off : bc -> lsb);
+  }
+}
+
+void knob_processing (int knob, int value) {
+  if (knob < 0 || knob >= 16) return;
+  led_command * kc = knob_commands + knob;
+  Serial . write (kc -> command); Serial . write (kc -> msb); Serial . write (value);
 }
 
 void loop () {
-  //analogWrite (current_led + 2, brightness);
-  //brightness += 1;
-  //if (brightness > 250) brightness = 0;
   for (int ind = 0; ind < 16; ind++) {
     int v = analogRead (A0 + ind);
     if (abs (v - a [ind]) > 3) {
       a [ind] = v;
       v >>= 3;
-      if (v != analogs [ind]) {
-        #ifdef DEBUG
-        Serial . print ("control ["); Serial . print (ind); Serial . print (" "); Serial . print (v); Serial . print ("]\n");
-        #else
-        Serial . write (0xb0); Serial . write (ind); Serial . write (v);
-        #endif
-      }
+      if (v != analogs [ind]) knob_processing (ind, v);
       analogs [ind] = v;
     }
   }
   for (int ind = 22; ind < 54; ind += 2) {
     int v = digitalRead (ind);
-    if (v != 0 && v != programs [ind]) {
-      current_led = to_program (ind);
-      set_led (current_led + 2);
-      cycles = 100;
-      Serial . write (0xc0); Serial . write (current_led);
-    }
+    if (v != programs [ind]) button_processing (to_program (ind), v);
     programs [ind] = v;
   }
-  while (Serial . available ()) {
-    int data = 0;
-    data = Serial . read ();
-    if (data >> 4 == 0xb) {active_control_read = true; msb_read = true;}
-    else if (data < 128) {
-      if (active_control_read) {
-        if (msb_read) {msb = data; msb_read = false;}
-        else {lsb = data; msb_read = true; control_processing ();}
-      }
-    } else {active_control_read = false;}
-  }
-  if (cycles >= 0) cycles--;
-  if (cycles == 0) set_led (-1);
+  while (Serial . available ()) {process_midi (Serial . read ());}
   delay (100);
 }
-
-/*
-static int a [16];
-static int analogs [16];
-static int brightness = 0;
-
-
-
-void setup() {
-  for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
-  for (int ind = 22; ind < 54; ind++) {pinMode (ind, INPUT);}
-  for (int ind = 0; ind < 16; ind++) {a [ind] = analogs [ind] = 0;}
-  Serial.begin(9600);
-}
-
-
-
-void loop() {
-  int v;
-  for (int ind = 0; ind < 16; ind++) {
-    v = analogRead (A0 + ind);
-    if (abs (v - a [ind]) > 3) {
-      a [ind] = v;
-      v >>= 3;
-      if (v != analogs [ind]) {
-        #ifdef DEBUG
-        Serial . print ("control ["); Serial . print (ind); Serial . print (" "); Serial . print (v); Serial . print ("]\n");
-        #else
-        Serial . write (0xb0); Serial . write (ind); Serial . write (v);
-        #endif
-      }
-      analogs [ind] = v;
-    }
-  }
-  //if (Serial . available ()) {
-  //  int brightness = Serial . read ();
-  //  brightness &= 0xff;
-  //  analogWrite (13, brightness);
-  //}
-  for (int ind = 4; ind < 8; ind++) analogWrite (ind, brightness);
-  brightness += 4;
-  if (brightness > 250) brightness = 0;
-  for (int ind = 22; ind < 54; ind++) {
-    int ii = digitalRead (ind);
-    if (ii != 0) {
-      #ifdef DEBUG
-      Serial . print ("programchange ["); Serial . print (ind); Serial . print (" "); Serial . print (ii); Serial . print ("]\n");
-      #else
-      Serial . write (0xb0); Serial . write (ind); Serial . write (ii);
-      #endif
-    }
-  }
-  delay (100);
-  //int sensorValue = analogRead(A0);
-  //float voltage = sensorValue * (5.0 / 1023.0);
-  //Serial.println(voltage);
-}
-*/
 
