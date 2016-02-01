@@ -1,6 +1,11 @@
 
 #include <EEPROM.h>
 
+void EEPROMupdate (int address, int value) {
+  if (EEPROM . read (address) == value) return;
+  EEPROM . write (address, value);
+}
+
 void set_led (int led, int intensity) {
   if (led < 0) return;
   if (led < 6) {analogWrite (7 - led, intensity); return;}
@@ -14,7 +19,7 @@ struct button_command {
   int lsb;
   int off;
   void set (int command, int channel, int msb, int lsb, int off) {
-    this -> command = ((command << 4) + channel) & 0x7f;
+    this -> command = ((command << 4) + channel) & 0xff;
     this -> msb = msb;
     this -> lsb = lsb;
     this -> off = off;
@@ -27,7 +32,7 @@ struct led_command {
   int command;
   int msb;
   void set (int command, int channel, int msb) {
-    this -> command = ((command << 4) + channel) & 0x7f;
+    this -> command = ((command << 4) + channel) & 0xff;
     this -> msb = msb;
   }
 };
@@ -46,8 +51,8 @@ static int channel = 0;
 static int midi_message [16];
 static int midi_counter = 0;
 
-static int manufacturers_id []= {-1, 0, 0};
-static int product_id [] = {-1, 0};
+static int manufacturers_id []= {0xff, 0, 0};
+static int product_id [] = {0xff, 0};
 static int product_model [] = {0, 0};
 static int product_version [] = {0, 0, 0, 0};
 static int device_id = 0x7f;
@@ -76,24 +81,24 @@ void eeprom_read () {
 
 void eeprom_burn () {
   int ep = 0;
-  for (int ind = 0; ind < 3; ind++) {EEPROM . update (ep++, manufacturers_id [ind]);}
-  EEPROM . update (ep++, product_id [0]); EEPROM . update (ep++, product_id [1]);
-  EEPROM . update (ep++, product_model [0]); EEPROM . update (ep++, product_model [1]);
-  for (int ind = 0; ind < 4; ind++) {EEPROM . update (ep++, product_versin [ind]);}
-  EEPROM . update (ep++, device_id);
+  for (int ind = 0; ind < 3; ind++) {EEPROMupdate (ep++, manufacturers_id [ind]);}
+  EEPROMupdate (ep++, product_id [0]); EEPROMupdate (ep++, product_id [1]);
+  EEPROMupdate (ep++, product_model [0]); EEPROMupdate (ep++, product_model [1]);
+  for (int ind = 0; ind < 4; ind++) {EEPROMupdate (ep++, product_version [ind]);}
+  EEPROMupdate (ep++, device_id);
   button_command * bc = button_commands;
   for (int ind = 0; ind < 12; ind++) {
-    EEPROM . update (ep++, bc -> short_message ? 0xff : 0);
-	EEPROM . update (ep++, bc -> command);
-	EEPROM . update (ep++, bc -> msb);
-	EEPROM . update (ep++, bc -> lsb);
-	EEPROM . update (ep++, bc -> off);
+    EEPROMupdate (ep++, bc -> short_message ? 0xff : 0);
+	EEPROMupdate (ep++, bc -> command);
+	EEPROMupdate (ep++, bc -> msb);
+	EEPROMupdate (ep++, bc -> lsb);
+	EEPROMupdate (ep++, bc -> off);
 	bc++;
   }
   led_command * lc = led_commands;
-  for (int ind = 0; ind < 12; ind++) {EEPROM . update (ep++, lc -> command); EEPROM . update (ep++, lc -> msb); lc++;}
+  for (int ind = 0; ind < 12; ind++) {EEPROMupdate (ep++, lc -> command); EEPROMupdate (ep++, lc -> msb); lc++;}
   lc = knob_commands;
-  for (int ind = 0; ind < 16; ind++) {EEPROM . update (ep++, lc -> command); EEPROM . update (ep++, lc -> msb); lc++;}
+  for (int ind = 0; ind < 16; ind++) {EEPROMupdate (ep++, lc -> command); EEPROMupdate (ep++, lc -> msb); lc++;}
 }
 
 int check_manufacturers_id () {
@@ -106,7 +111,7 @@ int check_manufacturers_id () {
 
 void process_system_exclusive () {
   if (midi_message [0] == 0x7e) {
-    if (manufacturers_id [0] < 0 || product_id [0] < 0) {Serial . write (0xf0); Serial . write (0x7e); Serial . write (0x7f); Serial . write (0xf7); return;}
+    if (manufacturers_id [0] > 0x7f || product_id [0] > 0x7f) {Serial . write (0xf0); Serial . write (0x7e); Serial . write (0x7f); Serial . write (0xf7); return;}
     if (midi_message [1] == 0x7f || midi_message [1] == device_id) {
       if (midi_message [2] != 6 || midi_message [3] != 1) return;
       Serial . write (0xf0); Serial . write (0x7e); Serial . write (device_id); Serial . write (6); Serial . write (2);
@@ -161,8 +166,9 @@ void process_system_exclusive () {
 	  led_commands [index] . set (m_command, m_channel, midi_message [mp]);
 	  return;
 	case 8: factory_reset (); break;
+	case 9: eeprom_burn (); break;
 	case 10: eeprom_read (); break;
-	case 11: eeprom_burn (): break;
+	case 13: factory_reset (); eeprom_burn (); break;
 	default: break;
   }
 }
@@ -189,8 +195,8 @@ void process_midi (int v) {
 }
 
 void factory_reset () {
-  manufacturers_id [0] = -1; manufacturers_id [1] = manufacturers_id [2] = 0;
-  product_id [0] = -1; product_id [1] = 0;
+  manufacturers_id [0] = 0xff; manufacturers_id [1] = manufacturers_id [2] = 0;
+  product_id [0] = 0xff; product_id [1] = 0;
   product_model [0] = product_model [1] = 0;
   for (int ind = 0; ind < 4; ind++) {product_version [ind] = 0;}
   device_id = 0x7f;
@@ -200,7 +206,7 @@ void factory_reset () {
 }
 
 void setup () {
-  factory_reset ();
+  eeprom_read ();
   for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
   for (int ind = 0; ind < 16; ind++) {analogs [ind] = (a [ind] = analogRead (A0 + ind)) >> 3;}
   for (int ind = 22; ind < 54; ind++) {pinMode (ind, INPUT); programs [ind] = 0;}
