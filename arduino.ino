@@ -26,6 +26,7 @@ struct button_command {
     if (command == 0xc || command == 0xd) short_message = true;
     else short_message = false;
   }
+  void set (int command, int channel) {this -> command = ((command << 4) + channel) & 0xff; if (command == 0xc || command == 0xd) short_message = true; else short_message = false;}
 };
 
 struct led_command {
@@ -35,6 +36,7 @@ struct led_command {
     this -> command = ((command << 4) + channel) & 0xff;
     this -> msb = msb;
   }
+  void set (int command, int channel) {this -> command = ((command << 4) + channel) & 0xff;}
 };
 
 static button_command button_commands [12];
@@ -145,15 +147,15 @@ void process_system_exclusive () {
     case 1: if (mp >= midi_counter) return;
       m_command = midi_message [mp++]; if (mp >= midi_counter) return;
       m_channel = midi_message [mp++];
-      if (mp >= midi_counter) {m_command = ((m_command << 4) + m_channel) & 0x7f; for (int ind = 0; ind < 16; ind++) knob_commands [ind] . command = m_command; return;}
-      index = midi_message [mp++]; if (mp >= midi_counter) return;
+      if (mp >= midi_counter) {for (int ind = 0; ind < 16; ind++) knob_commands [ind] . set (m_command, m_channel); return;}
+      index = midi_message [mp++]; if (mp >= midi_counter) return; if (index >= 16) return;
       knob_commands [index] . set (m_command, m_channel, midi_message [mp]);
       return;
 	case 2: if (mp >= midi_counter) return;
 	  m_command = midi_message [mp++]; if (mp >= midi_counter) return;
 	  m_channel = midi_message [mp++];
-	  if (mp >= midi_counter) {m_command = ((m_command << 4) + m_channel) & 0x7f; for (int ind = 0; ind < 12; ind++) button_commands [ind] . command = m_command; return;}
-	  index = midi_message [mp++]; if (mp >= midi_counter) return;
+	  if (mp >= midi_counter) {for (int ind = 0; ind < 12; ind++) button_commands [ind] . set (m_command, m_channel); return;}
+	  index = midi_message [mp++]; if (mp >= midi_counter) return; if (index >= 12) return;
 	  msb = midi_message [mp++]; if (mp >= midi_counter) {button_commands [index] . set (m_command, m_channel, msb, 100, 0); return;}
 	  lsb = midi_message [mp++]; if (mp >= midi_counter) {button_commands [index] . set (m_command, m_channel, msb, lsb, 0); return;}
 	  button_commands [index] . set (m_command, m_channel, msb, lsb, midi_message [mp]);
@@ -161,14 +163,15 @@ void process_system_exclusive () {
 	case 3: if (mp >= midi_counter) return;
 	  m_command = midi_message [mp++]; if (mp >= midi_counter) return;
 	  m_channel = midi_message [mp++];
-	  if (mp >= midi_counter) {m_command = ((m_command << 4) + m_channel) & 0x7f; for (int ind = 0; ind < 12; ind++) led_commands [ind] . command = m_command; return;}
-	  index = midi_message [mp++]; if (mp >= midi_counter) return;
+	  if (mp >= midi_counter) {for (int ind = 0; ind < 12; ind++) led_commands [ind] . set (m_command, m_channel); return;}
+	  index = midi_message [mp++]; if (mp >= midi_counter) return; if (index >= 12) return;
 	  led_commands [index] . set (m_command, m_channel, midi_message [mp]);
 	  return;
-	case 8: factory_reset (); break;
-	case 9: eeprom_burn (); break;
-	case 10: eeprom_read (); break;
-	case 13: factory_reset (); eeprom_burn (); break;
+        case 0x8: eeprom_read (); break;
+        case 0x9: reset (); break;
+        case 0xa: factory_reset (); break;
+        case 0xc: eeprom_burn (); break;
+        case 0xe: factory_reset (); eeprom_burn (); break;
 	default: break;
   }
 }
@@ -177,7 +180,7 @@ void process_midi_command () {
   for (int ind = 0; ind < 12; ind++) {
     led_command * lc = led_commands + ind;
 	if (lc -> msb == midi_message [0]) {
-	  if (lc -> command == command || (lc -> command & 0xf0 == 0x80 && lc -> command & 0xef == command & 0xef)) set_led (ind, midi_message [1]);
+	  if (lc -> command == command || ((lc -> command & 0xf0) == 0x90 && (lc -> command & 0xef) == (command & 0xef))) set_led (ind, midi_message [1]);
 	}
   }
 }
@@ -194,15 +197,19 @@ void process_midi (int v) {
   }
 }
 
+void reset () {
+  for (int ind = 0; ind < 6; ind++) {button_commands [ind] . set (0xc, 0, ind, 100, 0); led_commands [ind] . set (0xb, 0, ind);}
+  for (int ind = 6; ind < 12; ind++) {button_commands [ind] . set (0x9, 0, 54 + ind, 100, 0); led_commands [ind] . set (0x9, 0, 54 + ind);}
+  for (int ind = 0; ind < 16; ind++) {knob_commands [ind] . set (0xb, 0, ind);}
+}
+
 void factory_reset () {
   manufacturers_id [0] = 0xff; manufacturers_id [1] = manufacturers_id [2] = 0;
   product_id [0] = 0xff; product_id [1] = 0;
   product_model [0] = product_model [1] = 0;
   for (int ind = 0; ind < 4; ind++) {product_version [ind] = 0;}
   device_id = 0x7f;
-  for (int ind = 0; ind < 6; ind++) {button_commands [ind] . set (0xc, 0, ind, 100, 0); led_commands [ind] . set (0xb, 0, ind);}
-  for (int ind = 6; ind < 12; ind++) {button_commands [ind] . set (0x9, 0, 54 + ind, 100, 0); led_commands [ind] . set (0x9, 0, 54 + ind);}
-  for (int ind = 0; ind < 16; ind++) {knob_commands [ind] . set (0xb, 0, ind);}
+  reset ();
 }
 
 void setup () {
@@ -266,6 +273,6 @@ void loop () {
     programs [ind] = v;
   }
   while (Serial . available ()) {process_midi (Serial . read ());}
-  delay (100);
+  delay (20);
 }
 
