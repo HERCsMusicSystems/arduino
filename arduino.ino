@@ -1,4 +1,6 @@
 
+#include <EEPROM.h>
+
 void set_led (int led, int intensity) {
   if (led < 0) return;
   if (led < 6) {analogWrite (7 - led, intensity); return;}
@@ -49,6 +51,48 @@ static int product_id [] = {-1, 0};
 static int product_model [] = {0, 0};
 static int product_version [] = {0, 0, 0, 0};
 static int device_id = 0x7f;
+
+void eeprom_read () {
+  int ep = 0;
+  for (int ind = 0; ind < 3; ind++) {manufacturers_id [ind] = EEPROM . read (ep++);}
+  product_id [0] = EEPROM . read (ep++); product_id [1] = EEPROM . read (ep++);
+  product_model [0] = EEPROM . read (ep++); product_model [1] = EEPROM . read (ep++);
+  for (int ind = 0; ind < 4; ind++) {product_version [ind] = EEPROM . read (ep++);}
+  button_command * bc = button_commands;
+  for (int ind = 0; ind < 12; ind++) {
+    bc -> short_message = EEPROM . read (ep++) != 0;
+	bc -> command = EEPROM . read (ep++);
+	bc -> msb = EEPROM . read (ep++);
+	bc -> lsb = EEPROM . read (ep++);
+	bc -> off = EEPROM . read (ep++);
+	bc++;
+  }
+  led_command * lc = led_commands;
+  for (int ind = 0; ind < 12; ind++) {lc -> command = EEPROM . read (ep++); lc -> msb = EEPROM . read (ep++); lc++;}
+  lc = knob_commands;
+  for (int ind = 0; ind < 16; ind++) {lc -> command = EEPROM . read (ep++); lc -> msb = EEPROM . read (ep++); lc++;}
+}
+
+void eeprom_burn () {
+  int ep = 0;
+  for (int ind = 0; ind < 3; ind++) {EEPROM . write (ep++, manufacturers_id [ind]);}
+  EEPROM . write (ep++, product_id [0]); EEPROM . write (ep++, product_id [1]);
+  EEPROM . write (ep++, product_model [0]); EEPROM . write (ep++, product_model [1]);
+  for (int ind = 0; ind < 4; ind++) {EEPROM . write (ep++, product_versin [ind]);}
+  button_command * bc = button_commands;
+  for (int ind = 0; ind < 12; ind++) {
+    EEPROM . write (ep++, bc -> short_message ? 0xff : 0);
+	EEPROM . write (ep++, bc -> command);
+	EEPROM . write (ep++, bc -> msb);
+	EEPROM . write (ep++, bc -> lsb);
+	EEPROM . write (ep++, bc -> off);
+	bc++;
+  }
+  led_command * lc = led_commands;
+  for (int ind = 0; ind < 12; ind++) {EEPROM . write (ep++, lc -> command); EEPROM . write (ep++, lc -> msb); lc++;}
+  lc = knob_commands;
+  for (int ind = 0; ind < 16; ind++) {EEPROM . write (ep++, lc -> command); EEPROM . write (ep++, lc -> msb); lc++;}
+}
 
 int check_manufacturers_id () {
   if (midi_counter < 1) return 0;
@@ -114,11 +158,11 @@ void process_system_exclusive () {
 	  index = midi_message [mp++]; if (mp >= midi_counter) return;
 	  led_commands [index] . set (m_command, m_channel, midi_message [mp]);
 	  return;
+	case 8: factory_reset (); break;
+	case 10: eeprom_read (); break;
+	case 11: eeprom_burn (): break;
 	default: break;
   }
-  Serial . write (0xf0);
-  while (mp < midi_counter) Serial . write (midi_message [mp++]);
-  Serial . write (0xf7);
 }
 
 void process_midi_command () {
