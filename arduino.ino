@@ -58,6 +58,7 @@ void eeprom_read () {
   product_id [0] = EEPROM . read (ep++); product_id [1] = EEPROM . read (ep++);
   product_model [0] = EEPROM . read (ep++); product_model [1] = EEPROM . read (ep++);
   for (int ind = 0; ind < 4; ind++) {product_version [ind] = EEPROM . read (ep++);}
+  device_id = EEPROM . read (ep++);
   button_command * bc = button_commands;
   for (int ind = 0; ind < 12; ind++) {
     bc -> short_message = EEPROM . read (ep++) != 0;
@@ -75,23 +76,24 @@ void eeprom_read () {
 
 void eeprom_burn () {
   int ep = 0;
-  for (int ind = 0; ind < 3; ind++) {EEPROM . write (ep++, manufacturers_id [ind]);}
-  EEPROM . write (ep++, product_id [0]); EEPROM . write (ep++, product_id [1]);
-  EEPROM . write (ep++, product_model [0]); EEPROM . write (ep++, product_model [1]);
-  for (int ind = 0; ind < 4; ind++) {EEPROM . write (ep++, product_versin [ind]);}
+  for (int ind = 0; ind < 3; ind++) {EEPROM . update (ep++, manufacturers_id [ind]);}
+  EEPROM . update (ep++, product_id [0]); EEPROM . update (ep++, product_id [1]);
+  EEPROM . update (ep++, product_model [0]); EEPROM . update (ep++, product_model [1]);
+  for (int ind = 0; ind < 4; ind++) {EEPROM . update (ep++, product_versin [ind]);}
+  EEPROM . update (ep++, device_id);
   button_command * bc = button_commands;
   for (int ind = 0; ind < 12; ind++) {
-    EEPROM . write (ep++, bc -> short_message ? 0xff : 0);
-	EEPROM . write (ep++, bc -> command);
-	EEPROM . write (ep++, bc -> msb);
-	EEPROM . write (ep++, bc -> lsb);
-	EEPROM . write (ep++, bc -> off);
+    EEPROM . update (ep++, bc -> short_message ? 0xff : 0);
+	EEPROM . update (ep++, bc -> command);
+	EEPROM . update (ep++, bc -> msb);
+	EEPROM . update (ep++, bc -> lsb);
+	EEPROM . update (ep++, bc -> off);
 	bc++;
   }
   led_command * lc = led_commands;
-  for (int ind = 0; ind < 12; ind++) {EEPROM . write (ep++, lc -> command); EEPROM . write (ep++, lc -> msb); lc++;}
+  for (int ind = 0; ind < 12; ind++) {EEPROM . update (ep++, lc -> command); EEPROM . update (ep++, lc -> msb); lc++;}
   lc = knob_commands;
-  for (int ind = 0; ind < 16; ind++) {EEPROM . write (ep++, lc -> command); EEPROM . write (ep++, lc -> msb); lc++;}
+  for (int ind = 0; ind < 16; ind++) {EEPROM . update (ep++, lc -> command); EEPROM . update (ep++, lc -> msb); lc++;}
 }
 
 int check_manufacturers_id () {
@@ -187,6 +189,11 @@ void process_midi (int v) {
 }
 
 void factory_reset () {
+  manufacturers_id [0] = -1; manufacturers_id [1] = manufacturers_id [2] = 0;
+  product_id [0] = -1; product_id [1] = 0;
+  product_model [0] = product_model [1] = 0;
+  for (int ind = 0; ind < 4; ind++) {product_version [ind] = 0;}
+  device_id = 0x7f;
   for (int ind = 0; ind < 6; ind++) {button_commands [ind] . set (0xc, 0, ind, 100, 0); led_commands [ind] . set (0xb, 0, ind);}
   for (int ind = 6; ind < 12; ind++) {button_commands [ind] . set (0x9, 0, 54 + ind, 100, 0); led_commands [ind] . set (0x9, 0, 54 + ind);}
   for (int ind = 0; ind < 16; ind++) {knob_commands [ind] . set (0xb, 0, ind);}
