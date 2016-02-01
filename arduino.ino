@@ -124,7 +124,9 @@ void process_system_exclusive () {
 void process_midi_command () {
   for (int ind = 0; ind < 12; ind++) {
     led_command * lc = led_commands + ind;
-    if (lc -> command == command && lc -> msb == midi_message [0]) set_led (ind, midi_message [1]);
+	if (lc -> msb == midi_message [0]) {
+	  if (lc -> command == command || (lc -> command & 0xf0 == 0x80 && lc -> command & 0xef == command & 0xef)) set_led (ind, midi_message [1]);
+	}
   }
 }
 
