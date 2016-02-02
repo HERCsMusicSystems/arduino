@@ -127,6 +127,7 @@ void process_system_exclusive () {
     return;
   }
   if (midi_message [0] == 0x7d) {
+    if (manufacturers_id [0] <= 0x7f) return;
     int mp = 1;
     if (midi_message [mp] == 0) {for (int ind = 0; ind < 3; ind++) {if (mp >= midi_counter) return; manufacturers_id [ind] = midi_message [mp++];}}
     else {if (mp >= midi_counter) return; manufacturers_id [0] = midi_message [mp++];}
