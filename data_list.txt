@@ -52,20 +52,20 @@ v1 v2 v3 v4 = Product Version
         ║                 ╚═00═m1═m2═╝
         ╠═7D═╦═mm═══════╦═f1═f2═p1═p2═v1═v2═v3═v4═F7═════════════════> IDENTITY IMPRINT
         ║    ╚═00═m1═m2═╝                               (only once after factory reset)
-        ╠═mm═══════╦═dv═pp╦═00═dv═══F7═════════════════════════> SET DEVICE ID
-        ╚═00═m1═m2═╝      ╠═01═0c═══0h═╦═F7════════════════════> SET POTENTIOMETER COMMANDS
-                          ║            ╚═ii═id═F7══════════════> SET POTENTIOMETER COMMAND AND ID
-                          ╠═02═0c═══0h═╦═F7════════════════════> SET BUTTON COMMANDS
-                          ║            ╚═ii═id═╦═F7════════════> SET BUTTON COMMAND AND ID (100 / 0)
-                          ║                    ╚═hh═╦═F7═══════> SET BUTTON COMMAND AND ID (HIGH / 0)
-                          ║                         ╚═ll═F7════> SET BUTTON COMMAND AND ID (HIGH / LOW)
-                          ╠═03═0c═0h═╦═F7══════════════════════> SET LED COMMANDS
-                          ║          ╚═ii═id═F7════════════════> SET LED COMMAND AND ID
-                          ╠═08═F7════> POWER UP RESET REQUEST (EEPROM READ)
-                          ╠═09═F7════> RESET
-                          ╠═0A═F7════> FACTORY RESET
-                          ╠═0C═F7════> EEPROM BURN
-                          ╚═0E═F7════> FACTORY RESET AND EEPROM BURN
+        ╠═mm═══════╦═dv═pp═╦═00═dv═══F7═════════════════════════> SET DEVICE ID
+        ╚═00═m1═m2═╝       ╠═01═0c═══0h═╦═F7════════════════════> SET POTENTIOMETER COMMANDS
+                           ║            ╚═ii═id═F7══════════════> SET POTENTIOMETER COMMAND AND ID
+                           ╠═02═0c═══0h═╦═F7════════════════════> SET BUTTON COMMANDS
+                           ║            ╚═ii═id═╦═F7════════════> SET BUTTON COMMAND AND ID (100 / 0)
+                           ║                    ╚═hh═╦═F7═══════> SET BUTTON COMMAND AND ID (HIGH / 0)
+                           ║                         ╚═ll═F7════> SET BUTTON COMMAND AND ID (HIGH / LOW)
+                           ╠═03═0c═0h═╦═F7══════════════════════> SET LED COMMANDS
+                           ║          ╚═ii═id═F7════════════════> SET LED COMMAND AND ID
+                           ╠═08═F7════> POWER UP RESET REQUEST (EEPROM READ)
+                           ╠═09═F7════> RESET
+                           ╠═0A═F7════> FACTORY RESET
+                           ╠═0C═F7════> EEPROM BURN
+                           ╚═0E═F7════> FACTORY RESET AND EEPROM BURN
 
          dv = Device ID
          mm = Manufacturer's ID (one byte)
