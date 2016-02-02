@@ -1,0 +1,81 @@
+﻿
+TRANSMISSION
+
+===> F0 7E 7F F7 ==========================================> IDENTITY REPLY
+===> F0 7E dv 06 02 mm f1 f2 p1 p2 v1 v2 f3 f4 ============> IDENTITY REPLY
+===> F0 7E dv 06 02 00 m1 m2 f1 f2 p1 p2 v1 v2 v3 v4 F7 ===> IDENTITY REPLY
+
+RECEPTION
+
+===> F0 7F dv 06 01 F7 ====================================> IDENTITY REQUEST
+===> F0 7D dv mm f1 f2 p1 p2 v1 v2 v3 v4 F7 ===============> IDENTITY IMPRINT
+===> F0 7D dv 00 m1 m2 f1 f2 p1 p2 v1 v2 v3 v4 F7 =========> IDENTITY IMPRINT
+===> F0 mmm dv pp 00 dv F7 ===================> SET DEVICE ID
+===> F0 mmm dv pp 01 0c 0h F7 ================> SET POTENTIOMETER COMMANDS
+===> F0 mmm dv pp 01 0c 0h ii id F7 ==========> SET POTENTIOMETER COMMAND AND ID
+===> F0 mmm dv pp 02 0c 0h F7 ================> SET BUTTON COMMANDS
+===> F0 mmm dv pp 02 0c 0h ii id F7 ==========> SET BUTTON COMMAND AND ID (100 / 0)
+===> F0 mmm dv pp 02 0c 0h ii id hh F7 =======> SET BUTTON COMMAND AND ID (HIGH / 0)
+===> F0 mmm dv pp 02 0c 0h ii id hh ll F7 ====> SET BUTTON COMMAND AND ID (HIGH / LOW)
+===> F0 mmm dv pp 03 0c 0h F7 ================> SET LED COMMANDS
+===> F0 mmm dv pp 03 0c 0h ii id F7 ==========> SET LED COMMAND AND ID
+===> F0 mmm dv pp 08 F7 ======================> POWER UP RESET REQUEST (EEPROM READ)
+===> F0 mmm dv pp 09 F7 ======================> RESET
+===> F0 mmm dv pp 0A F7 ======================> FACTORY RESET
+===> F0 mmm dv pp 0C F7 ======================> EEPROM BURN
+===> F0 mmm dv pp 0C F7 ======================> FACTORY RESET AND EEPROM BURN
+
+
+
+═════F0═╦═7F═══dv═══06═══01═══F7═════════════════════════════════════════> IDENTITY REQUEST
+        ╠═7E═╦═7F═══F7═══════════════════════════════════════════════════> IDENTITY REPLY
+        ║    ╠═7E═══dv═══06═══02═══mm═f1═f2═p1═p2═v1═v2═f3═f4═══f7═══════> IDENTITY REPLY
+        ║    ╚═dv═══06═══02═══00═══m1═m2═f1═f2═p1═p2═v1═v2═v3═v4═══F7════> IDENTITY REPLY
+        ╠═7D═══dv═╦═mm═══f1═══f2═══p1═p2═v1═v2═v3═v4═══F7════════════════> IDENTITY IMPRINT
+        ║         ╚═00═══m1═══m2═══f1═f2═p1═p2═v1═v2═v3═v4═══F7══════════> IDENTITY IMPRINT
+        ╚mmm═dv═pp╦═00═══dv═══F7═════════════════════════════════════════> SET DEVICE ID
+                  ╠═01═══0c═══0h═╦═F7════════════════════════════════════> SET POTENTIOMETER COMMANDS
+                  ║              ╚═ii═══id═══F7══════════════════════════> SET POTENTIOMETER COMMAND AND ID
+                  ╠═02═══0c═══0h═╦═F7════════════════════════════════════> SET BUTTON COMMANDS
+                  ║              ╚═ii═══id═╦═F7══════════════════════════> SET BUTTON COMMAND AND ID (100 / 0)
+                  ║                        ╚═hh═╦═F7═════════════════════> SET BUTTON COMMAND AND ID (HIGH / 0)
+                  ║                             ╚═ll═F7══════════════════> SET BUTTON COMMAND AND ID (HIGH / LOW)
+                  ╠═03═══0c═══0h═╦═F7════════════════════════════════════> SET LED COMMANDS
+                  ║              ╚═ii═══id═══F7══════════════════════════> SET LED COMMAND AND ID
+                  ╠═08═══F7══════════════════════════════════════════════> POWER UP RESET REQUEST (EEPROM READ)
+                  ╠═09═══F7══════════════════════════════════════════════> RESET
+                  ╠═0A═══F7══════════════════════════════════════════════> FACTORY RESET
+                  ╠═0C═══F7══════════════════════════════════════════════> EEPROM BURN
+                  ╚═0E═══F7══════════════════════════════════════════════> FACTORY RESET AND EEPROM BURN
+
+
+          dv = Device ID
+          mm = Manufacturer's ID (one byte)
+       m1 m2 = Manufacturer's ID (0 and two bytes)
+         mmm = Manufacturer's ID (one or three bytes)
+       f1 f2 = Product Family
+       p1 p2 = Product Model
+ v1 v2 v3 v4 = Product Version
+          pp = Product ID (identical to f1)
+          0c = MIDI command (upper 4 bits)
+          0h = MIDI channel (to be combined with MIDI command)
+          ii = Controller's index
+          hh = High value
+          ll = Low value
+
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │  ╔═══╗   ╔═══╦═══╦═══╦═══╗ ╔═══╦═══╦═══╦═══╗ ╔═══╦═══╦═══╦═══╗ ╔═══╦═══╦═══╗ ╔═══╦═══╦═══╦═══╗  │
+ │  ║Esc║   ║F1 ║F2 ║F3 ║F4 ║ ║F5 ║F6 ║F7 ║F8 ║ ║F9 ║F10║F11║F12║ ║PrS║ScL║Brk║ ║NmL║CsL║ScL║OnL║  │
+ │  ╚═══╝   ╚═══╩═══╩═══╩═══╝ ╚═══╩═══╩═══╩═══╝ ╚═══╩═══╩═══╩═══╝ ╚═══╩═══╩═══╝ ╚═══╩═══╩═══╩═══╝  │
+ │  ╔═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══════╗ ╔═══╦═══╦═══╗ ╔═══╦═══╦═══╦═══╗  │
+ │  ║` ~║1 !║2 @║3 #║4 $║5 %║6 ^║7 &║8 *║9 (║0 )║- _║= +║←BACKSP║ ║Ins║Hom║PgU║ ║NmL║ / ║ * ║ - ║  │
+ │  ╠═══╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═════╣ ╠═══╬═══╬═══╣ ╠═══╬═══╬═══╬═══╣  │
+ │  ║TAB ↔║ Q ║ W ║ E ║ R ║ T ║ Y ║ U ║ I ║ O ║ P ║[ {║] }║ENTER║ ║Del║End║PgD║ ║ 7 ║ 8 ║ 9 ║   ║  │
+ │  ╠═════╩╦══╩╦══╩╦══╩╦══╩╦══╩╦══╩╦══╩╦══╩╦══╩╦══╩╦══╩╦══╩╗ ∟  ║ ╚═══╩═══╩═══╝ ╠═══╬═══╬═══╣ + ║  │
+ │  ║ CAPS ║ A ║ S ║ D ║ F ║ G ║ H ║ J ║ K ║ L ║; :║' "║\ |║    ║               ║ 4 ║ 5 ║ 6 ║   ║  │
+ │  ╠══════╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═╦═╩═══╩════╣     ╔═══╗     ╠═══╬═══╬═══╬═══╣  │
+ │  ║↑ SHIFT ║ Z ║ X ║ C ║ V ║ B ║ N ║ M ║, <║. >║/ ?║ ↑ SHIFT  ║     ║ ↑ ║     ║ 1 ║ 2 ║ 3 ║   ║  │
+ │  ╠═════╦══╩╦══╩══╦╩═══╩═══╩═══╩═══╩═══╩═══╩══╦╩═══╩╦═══╦═════╣ ╔═══╬═══╬═══╗ ╠═══╩═══╬═══╣ ∟ ║  │
+ │  ║Ctrl ║   ║ Alt ║           SPACE           ║ Alt ║   ║Ctrl ║ ║ ← ║ ↓ ║ → ║ ║  0    ║ . ║   ║  │
+ │  ╚═════╝   ╚═════╩═══════════════════════════╩═════╝   ╚═════╝ ╚═══╩═══╩═══╝ ╚═══════╩═══╩═══╝  │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────┘
