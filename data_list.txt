@@ -1,4 +1,7 @@
-﻿TRANSMISSION
+﻿
+
+
+TRANSMISSION
 
 ===> F0 7E 7F F7 ==========================================> FACTORY IDENTITY REPLY
 ===> F0 7E dv 06 02 mm f1 f2 p1 p2 v1 v2 f3 f4 ============> IDENTITY REPLY
@@ -24,6 +27,23 @@ RECEPTION
 ===> F0 mmm dv pp 0C F7 ====> EEPROM BURN
 ===> F0 mmm dv pp 0C F7 ====> FACTORY RESET AND EEPROM BURN
 
+         dv = Device ID
+         mm = Manufacturer's ID (one byte)
+      m1 m2 = Manufacturer's ID (0 and two bytes)
+        mmm = Manufacturer's ID (one or three bytes)
+      f1 f2 = Product Family
+      p1 p2 = Product Model
+v1 v2 v3 v4 = Product Version
+         pp = Product ID (identical to f1)
+         0c = MIDI command (upper 4 bits)
+         0h = MIDI channel (to be combined with MIDI command)
+         ii = Controller's index
+         hh = High value
+         ll = Low value
+
+
+
+
 
 
 ═════F0═╦═7E═╦═7F═F7═════════════════════════════════════════════════> FACTORY IDENTITY REPLY
@@ -47,7 +67,6 @@ RECEPTION
                           ╠═0C═F7════> EEPROM BURN
                           ╚═0E═F7════> FACTORY RESET AND EEPROM BURN
 
-
          dv = Device ID
          mm = Manufacturer's ID (one byte)
       m1 m2 = Manufacturer's ID (0 and two bytes)
@@ -61,6 +80,13 @@ v1 v2 v3 v4 = Product Version
          ii = Controller's index
          hh = High value
          ll = Low value
+
+
+
+
+
+
+
 
  ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
  │  ╔═══╗   ╔═══╦═══╦═══╦═══╗ ╔═══╦═══╦═══╦═══╗ ╔═══╦═══╦═══╦═══╗ ╔═══╦═══╦═══╗ ╔═══╦═══╦═══╦═══╗  │
