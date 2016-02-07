@@ -1,3 +1,8 @@
+/////////////////////////
+// COMPONENTS          //
+// OMTER OM200C1-M4    //
+// OMTER OM200C-M4/NO1 //
+/////////////////////////
 
 #include <EEPROM.h>
 
