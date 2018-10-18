@@ -25,7 +25,7 @@ RECEPTION
 ===> F0 mmm dv pp 09 F7 ====> RESET
 ===> F0 mmm dv pp 0A F7 ====> FACTORY RESET
 ===> F0 mmm dv pp 0C F7 ====> EEPROM BURN
-===> F0 mmm dv pp 0C F7 ====> FACTORY RESET AND EEPROM BURN
+===> F0 mmm dv pp 0E F7 ====> FACTORY RESET AND EEPROM BURN
 
          dv = Device ID
          mm = Manufacturer's ID (one byte)
