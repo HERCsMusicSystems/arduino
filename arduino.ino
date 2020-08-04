@@ -218,10 +218,18 @@ void factory_reset () {
   reset ();
 }
 
+bool two_bytes (int ind) {return ind < 0x20 || (ind >= 0x46 && ind <= 0x57);}
+
 void setup () {
   eeprom_read ();
   for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
-  for (int ind = 0; ind < 16; ind++) {analogs [ind] = (a [ind] = analogRead (A0 + ind)) >> 3;}
+  for (int ind = 0; ind < 16; ind++) {
+    int v = a [ind] = analogRead (A0 + ind);
+    led_command * kc = knob_commands + ind;
+    if (two_bytes (kc -> msb)) v = (int) ((float) v * 129.0 / 1024.0);
+    else v >>= 3;
+    analogs [ind] = v;
+  }
   for (int ind = 22; ind < 54; ind++) {pinMode (ind, INPUT); programs [ind] = 0;}
   Serial . begin (9600);
 }
@@ -260,6 +268,7 @@ void button_processing (int button, int value) {
 void knob_processing (int knob, int value) {
   if (knob < 0 || knob >= 16) return;
   led_command * kc = knob_commands + knob;
+  if (value > 127) {Serial . write (kc -> command); Serial . write (kc -> msb + 0x20); Serial . write (127); value = 127;}
   Serial . write (kc -> command); Serial . write (kc -> msb); Serial . write (value);
 }
 
@@ -268,7 +277,9 @@ void loop () {
     int v = analogRead (A0 + ind);
     if (abs (v - a [ind]) > 3) {
       a [ind] = v;
-      v >>= 3;
+      led_command * kc = knob_commands + ind;
+      if (two_bytes (kc -> msb)) v = (int) ((float) v * 129.0 / 1024.0);
+      else v >>=3;
       if (v != analogs [ind]) knob_processing (ind, v);
       analogs [ind] = v;
     }
