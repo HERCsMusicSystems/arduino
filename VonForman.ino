@@ -49,3 +49,12 @@ public:
 	void KeyOff (void) {for (int ind = 0; ind < 128; ind ++) Keys [ind] . KeyOff (); MonoKey . KeyOff (); KeyStackPointer = 0;};
 	void Ground (void) {for (int ind = 0; ind < 128; ind ++) Keys [ind] . Ground (& program); KeyStackPointer = 0;};
 };
+
+void setup (void) {
+	Serial . begin (9600);
+};
+
+void loop (void) {
+	while (Serial . available ()) Serial . println (Serial . read ());
+	delay (20);
+};
