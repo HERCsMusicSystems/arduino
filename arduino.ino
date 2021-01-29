@@ -5,6 +5,7 @@
 /////////////////////////
 
 #include <EEPROM.h>
+#include "VonForman.h"
 
 void EEPROMupdate (int address, int value) {
   if (EEPROM . read (address) == value) return;
@@ -219,6 +220,8 @@ void factory_reset () {
 }
 
 bool two_bytes (int ind) {return ind < 0x20 || (ind >= 0x46 && ind <= 0x57);}
+
+Channel LEDChannel;
 
 void setup () {
   eeprom_read ();

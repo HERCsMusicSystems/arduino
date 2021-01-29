@@ -2,15 +2,15 @@
 class Program {
 public:
 	struct {
-		double: H, S, V, R, G, B; double RGB;
-		void ground (void) {S = V = 1.0; H = R = G = B = RGB = 0.0};
+		double H, S, V, R, G, B; double RGB;
+		void ground (void) {S = V = 1.0; H = R = G = B = RGB = 0.0;};
 	} Colour;
 	struct {
-		double: Attack, Decay, Sustain, Release, Width;
+		double Attack, Decay, Sustain, Release, Width;
 		void ground (void) {Attack = Release = 0.0; Decay = Sustain = 1.0; Width = 2.0;}
 	} Width;
 	struct {
-		double: Attack, Decay, Sustain, Release;
+		double Attack, Decay, Sustain, Release;
 		void ground (void) {Attack = Release = 0.0; Decay = Sustain = 1.0;};
 	} Intensity;
 	double Mono;
@@ -50,11 +50,3 @@ public:
 	void Ground (void) {for (int ind = 0; ind < 128; ind ++) Keys [ind] . Ground (& program); KeyStackPointer = 0;};
 };
 
-void setup (void) {
-	Serial . begin (9600);
-};
-
-void loop (void) {
-	while (Serial . available ()) Serial . println (Serial . read ());
-	delay (20);
-};
