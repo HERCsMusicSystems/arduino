@@ -229,6 +229,7 @@ bool two_bytes (int ind) {return ind < 0x20 || (ind >= 0x46 && ind <= 0x57);}
 Channel LEDChannel;
 
 void setup () {
+  LEDChannel . Keys [64] . Active = true;
   strip . begin ();
   strip . show ();
   strip . setBrightness (50);
