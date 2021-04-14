@@ -2,8 +2,8 @@
 class Program {
 public:
 	struct {
-		double H, S, V, R, G, B; double RGB;
-		void ground (void) {S = V = 1.0; H = R = G = B = RGB = 0.0;};
+		double H, S, V;
+		void ground (void) {S = V = 1.0; H = 0.0;};
 	} Colour;
 	struct {
 		double Attack, Decay, Sustain, Release, Width;

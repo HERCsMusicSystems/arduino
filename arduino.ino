@@ -7,6 +7,11 @@
 #include <EEPROM.h>
 #include "VonForman.h"
 
+#include <Adafruit_NeoPixel.h>
+#define LED_PIN 6
+#define LED_COUNT 120
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+
 void EEPROMupdate (int address, int value) {
   if (EEPROM . read (address) == value) return;
   EEPROM . write (address, value);
@@ -224,6 +229,9 @@ bool two_bytes (int ind) {return ind < 0x20 || (ind >= 0x46 && ind <= 0x57);}
 Channel LEDChannel;
 
 void setup () {
+  strip . begin ();
+  strip . show ();
+  strip . setBrightness (50);
   eeprom_read ();
   for (int ind = 0; ind < 14; ind++) {pinMode (ind, OUTPUT);}
   for (int ind = 0; ind < 16; ind++) {
@@ -275,6 +283,8 @@ void knob_processing (int knob, int value) {
   Serial . write (kc -> command); Serial . write (kc -> msb); Serial . write (value);
 }
 
+static long fph = 0;
+
 void loop () {
   for (int ind = 0; ind < 16; ind++) {
     int v = analogRead (A0 + ind);
@@ -293,6 +303,14 @@ void loop () {
     programs [ind] = v;
   }
   while (Serial . available ()) {process_midi (Serial . read ());}
+  int n = strip . numPixels ();
+  for (int i = 0; i < n; i ++) {
+    int pixelHue = fph + (i * 65536L / n);
+	strip . setPixelColor (i, strip . gamma32 (strip . ColorHSV (pixelHue)));
+  }
+  strip . show ();
+  fph += 256;
+  if (fph >= 5 * 65536) fph = 0;
   delay (20);
 }
 
