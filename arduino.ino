@@ -188,13 +188,18 @@ void process_system_exclusive () {
   }
 }
 
+Channel LEDChannel;
+
 void process_midi_command () {
-  for (int ind = 0; ind < 12; ind++) {
-    led_command * lc = led_commands + ind;
-	if (lc -> msb == midi_message [0]) {
-	  if (lc -> command == command || ((lc -> command & 0xf0) == 0x90 && (lc -> command & 0xef) == (command & 0xef))) set_led (ind, midi_message [1]);
+	int c = command >> 4;
+	if (c == 0x9) LEDChannel . Keys [midi_message [0]] . Active = (midi_message [1] > 0);
+	if (c == 0x8) LEDChannel . Keys [midi_message [0]] . Active = false;
+	for (int ind = 0; ind < 12; ind++) {
+		led_command * lc = led_commands + ind;
+		if (lc -> msb == midi_message [0]) {
+			if (lc -> command == command || ((lc -> command & 0xf0) == 0x90 && (lc -> command & 0xef) == (command & 0xef))) set_led (ind, midi_message [1]);
+		}
 	}
-  }
 }
 
 void process_midi (int v) {
@@ -225,8 +230,6 @@ void factory_reset () {
 }
 
 bool two_bytes (int ind) {return ind < 0x20 || (ind >= 0x46 && ind <= 0x57);}
-
-Channel LEDChannel;
 
 void setup () {
   LEDChannel . Keys [64] . Active = true;
