@@ -192,8 +192,8 @@ Channel LEDChannel;
 
 void process_midi_command () {
 	int c = command >> 4;
-	if (c == 0x9) LEDChannel . Keys [midi_message [0]] . Active = (midi_message [1] > 0);
-	if (c == 0x8) LEDChannel . Keys [midi_message [0]] . Active = false;
+	if (c == 0x9) LEDChannel . KeyOn (midi_message [0], midi_message [1]);
+	if (c == 0x8) LEDChannel . KeyOff (midi_message [0]);
 	for (int ind = 0; ind < 12; ind++) {
 		led_command * lc = led_commands + ind;
 		if (lc -> msb == midi_message [0]) {

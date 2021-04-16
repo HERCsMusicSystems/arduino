@@ -44,6 +44,7 @@ public:
 		}
 	};
 	void KeyOn (int key, int velocity) {
+		if (velocity < 1) {KeyOff (key); return;}
 		RemoveKey (key);
 		if (KeyStackPointer >= 128) KeyStackPointer = 127;
 		KeyStack [KeyStackPointer ++] = key;
