@@ -232,7 +232,7 @@ void factory_reset () {
 bool two_bytes (int ind) {return ind < 0x20 || (ind >= 0x46 && ind <= 0x57);}
 
 void setup () {
-  LEDChannel . Keys [64] . Active = true;
+  //LEDChannel . Keys [64] . Active = true;
   strip . begin ();
   strip . show ();
   strip . setBrightness (50);
@@ -310,7 +310,8 @@ void loop () {
   int n = strip . numPixels ();
   for (int i = 0; i < n; i ++) {
     int pixelHue = fph + (i * 65536L / n);
-	strip . setPixelColor (i, strip . gamma32 (strip . ColorHSV (pixelHue)));
+    if (LEDChannel . Keys [i] . Active) strip . setPixelColor (i, strip . gamma32 (strip . ColorHSV (pixelHue)));
+    else strip . setPixelColor (i, strip . gamma32 (strip . ColorHSV (pixelHue, 0, 0)));
   }
   strip . show ();
   fph += 256;

@@ -25,7 +25,7 @@ class Key {
 public:
 	bool Active;
 	Program * program;
-	void KeyOn (int velocity) {Active = true;};
+	void KeyOn (int velocity) {Active = velocity > 0;};
 	void KeyOff (void) {Active = false;};
 	void Move (double time);
 	void Ground (Program * program) {this -> program = program; Active = false;};
