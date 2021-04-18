@@ -203,6 +203,7 @@ void process_midi_command () {
 }
 
 void process_midi (int v) {
+  Serial . write (v);
   if (v == 0xf7) {process_system_exclusive (); return;}
   if (v == 0xf0) {command = 0xf0; cmd = 0xf0; channel = 0; midi_counter = 0; return;}
   if (v > 0xf0) return;
@@ -269,7 +270,7 @@ int to_program (int from) {
 }
 
 void button_processing (int button, int value) {
-  if (button < 0 || button >= 12) return;
+  /*if (button < 0 || button >= 12) return;
   button_command * bc = button_commands + button;
   if (bc -> short_message) {
     if (value == 0) return;
@@ -277,14 +278,14 @@ void button_processing (int button, int value) {
   } else {
     Serial . write (bc -> command); Serial . write (bc -> msb);
     Serial . write (value == 0 ? bc -> off : bc -> lsb);
-  }
+  }*/
 }
 
 void knob_processing (int knob, int value) {
-  if (knob < 0 || knob >= 16) return;
+  /*if (knob < 0 || knob >= 16) return;
   led_command * kc = knob_commands + knob;
   if (value > 127) {Serial . write (kc -> command); Serial . write (kc -> msb + 0x20); Serial . write (127); value = 127;}
-  Serial . write (kc -> command); Serial . write (kc -> msb); Serial . write (value);
+  Serial . write (kc -> command); Serial . write (kc -> msb); Serial . write (value);*/
 }
 
 static long fph = 0;
